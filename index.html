@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Will You Be My Valentine? 💕</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Georgia', serif;
+            overflow: hidden;
+            background: linear-gradient(135deg, #f3e8ff 0%, #fce4ec 50%, #e8f5e9 100%);
+        }
+
+        #proposal-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: linear-gradient(135deg, #fce4ec 0%, #f3e5f5 50%, #e8eaf6 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            animation: fadeInProposal 1s ease-in;
+        }
+
+        #proposal-content {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 60px 80px;
+            border-radius: 30px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            animation: scaleIn 0.8s ease-out 0.5s backwards;
+        }
+
+        #proposal-content h1 {
+            font-size: 4em;
+            color: #e091b5;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(224, 145, 181, 0.2);
+        }
+
+        #proposal-content h2 {
+            font-size: 2.5em;
+            color: #c9a0c9;
+            margin-bottom: 40px;
+            font-weight: normal;
+        }
+
+        #yes-button {
+            font-size: 1.8em;
+            padding: 20px 60px;
+            background: linear-gradient(135deg, #e8a0bf 0%, #d4a5d4 100%);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            font-family: 'Georgia', serif;
+            box-shadow: 0 10px 30px rgba(224, 160, 191, 0.4);
+            transition: all 0.3s ease;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        #yes-button:hover {
+            transform: scale(1.1);
+            box-shadow: 0 15px 40px rgba(224, 160, 191, 0.6);
+        }
+
+        @keyframes fadeInProposal {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes scaleIn {
+            from {
+                transform: scale(0.5);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        #canvas-container {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+        }
+
+        #message {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            color: #f8f0f8;
+            text-shadow: 2px 2px 4px rgba(180,120,160,0.3);
+            z-index: 10;
+            pointer-events: none;
+            opacity: 0;
+            animation: fadeIn 2s ease-in 3s forwards;
+        }
+
+        #message h1 {
+            font-size: 3em;
+            margin-bottom: 20px;
+            font-weight: normal;
+        }
+
+        #message p {
+            font-size: 1.5em;
+            font-style: italic;
+        }
+
+        #instructions {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(200,180,200,0.8);
+            font-size: 0.9em;
+            text-align: center;
+            z-index: 10;
+            animation: fadeIn 2s ease-in 4s forwards;
+            opacity: 0;
+        }
+
+        @keyframes fadeIn {
+            to {
+                opacity: 1;
+            }
+        }
+
+        #loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #d4a5c8;
+            font-size: 1.5em;
+            z-index: 5;
+        }
+    </style>
+</head>
+<body>
+    <div id="proposal-screen">
+        <div id="proposal-content">
+            <h1>Pelzom</h1>
+            <h2>Will You Be My Valentine? 💕</h2>
+            <button id="yes-button">Yes! 💖</button>
+        </div>
+    </div>
+
+    <div id="canvas-container" style="display: none;"></div>
+    
+    <div id="message">
+        <h1>For You, Pelzom ❤️</h1>
+        <p>A pink lily that blooms forever</p>
+    </div>
+
+    <div id="instructions">
+        🖱️ Drag to rotate • 🔍 Scroll to zoom
+    </div>
+
+    <div id="loading">Creating your lily...</div>
+
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+        let startTime = Date.now();
+        document.getElementById('yes-button').addEventListener('click', () => {
+            const proposalScreen = document.getElementById('proposal-screen');
+            const canvasContainer = document.getElementById('canvas-container');
+            proposalScreen.style.transition = 'opacity 1s ease-out';
+            proposalScreen.style.opacity = '0';
+            setTimeout(() => {
+                proposalScreen.style.display = 'none';
+                canvasContainer.style.display = 'block';
+                startTime = Date.now();
+            }, 1000);
+        });
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.2;
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        document.getElementById('canvas-container').appendChild(renderer.domElement);
+
+        const scene = new THREE.Scene();
+
+        const camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 100);
+        camera.position.set(0, 3, 7);
+
+        const controls = new OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.autoRotate = true;
+        controls.autoRotateSpeed = 0.8;
+        controls.target.set(0, 2, 0);
+
+        const ambientLight = new THREE.AmbientLight(0xfff0f5, 0.6);
+        scene.add(ambientLight);
+
+        const keyLight = new THREE.DirectionalLight(0xffffff, 1.4);
+        keyLight.position.set(4, 8, 4);
+        keyLight.castShadow = true;
+        keyLight.shadow.mapSize.width = 1024;
+        keyLight.shadow.mapSize.height = 1024;
+        scene.add(keyLight);
+
+        const fillLight = new THREE.DirectionalLight(0xf5d5e0, 0.6);
+        fillLight.position.set(-4, 4, -2);
+        scene.add(fillLight);
+
+        const rimLight = new THREE.DirectionalLight(0xfff5ee, 0.8);
+        rimLight.position.set(0, 3, -6);
+        scene.add(rimLight);
+
+        const underLight = new THREE.PointLight(0xe8a0bf, 0.3, 10);
+        underLight.position.set(0, -1, 0);
+        scene.add(underLight);
+
+        const flower = new THREE.Group();
+
+        function createCurvedPetal(widthScale, lengthScale, curlBack, tiltVariation) {
+            const segW = 12;  // segments across width
+            const segL = 20;  // segments along length
+            const vertices = [];
+            const normals = [];
+            const uvs = [];
+            const indices = [];
+            const colors = [];
+
+            for (let j = 0; j <= segL; j++) {
+                const v = j / segL;  // 0 at base, 1 at tip
+                const len = v * lengthScale;
+
+                const widthProfile = Math.sin(v * Math.PI) * (1 - 0.3 * v);
+                const petalWidth = widthProfile * widthScale;
+
+                const curlAngle = v * v * curlBack;
+                const yOffset = Math.cos(curlAngle) * len;
+                const zOffset = -Math.sin(curlAngle) * len;
+
+                for (let i = 0; i <= segW; i++) {
+                    const u = i / segW;
+                    const x = (u - 0.5) * petalWidth;
+
+                    const crossCurve = -Math.sin(u * Math.PI) * 0.15 * (1 - v * 0.5);
+
+                    const wave = Math.sin(u * Math.PI * 3) * 0.02 * v;
+
+                    vertices.push(x, yOffset + crossCurve + wave + tiltVariation * v * x, zOffset);
+
+                    normals.push(0, Math.cos(curlAngle) * 0.5 + 0.5, -Math.sin(curlAngle) * 0.5);
+                    uvs.push(u, v);
+
+                    const centerDist = Math.abs(u - 0.5) * 2; // 0 at center, 1 at edge
+                    const baseColor = new THREE.Color(0xe8a0bf);  // pastel rose at base
+                    const midColor = new THREE.Color(0xf5c6d8);   // soft pastel pink
+                    const tipColor = new THREE.Color(0xfde8ef);   // very light pastel at tip
+                    const edgeTint = new THREE.Color(0xfff0f5);   // almost white at edges
+
+                    let c = new THREE.Color();
+                    if (v < 0.5) {
+                        c.lerpColors(baseColor, midColor, v * 2);
+                    } else {
+                        c.lerpColors(midColor, tipColor, (v - 0.5) * 2);
+                    }
+                    c.lerp(edgeTint, centerDist * 0.25);
+
+                    const speckle = Math.sin(u * 47 + v * 31) * Math.sin(u * 23 + v * 53);
+                    if (speckle > 0.6 && v > 0.15 && v < 0.7) {
+                        c.lerp(new THREE.Color(0xc97593), 0.35);
+                    }
+
+                    colors.push(c.r, c.g, c.b);
+                }
+            }
+
+            for (let j = 0; j < segL; j++) {
+                for (let i = 0; i < segW; i++) {
+                    const a = j * (segW + 1) + i;
+                    const b = a + 1;
+                    const c = a + (segW + 1);
+                    const d = c + 1;
+                    indices.push(a, c, b, b, c, d);
+                }
+            }
+
+            const geometry = new THREE.BufferGeometry();
+            geometry.setAttribute('position', new THREE.Float32BufferAttribute(vertices, 3));
+            geometry.setAttribute('normal', new THREE.Float32BufferAttribute(normals, 3));
+            geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+            geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+            geometry.setIndex(indices);
+            geometry.computeVertexNormals();
+
+            return geometry;
+        }
+
+        const petalMaterial = new THREE.MeshPhysicalMaterial({
+            vertexColors: true,
+            side: THREE.DoubleSide,
+            roughness: 0.5,
+            metalness: 0.0,
+            clearcoat: 0.25,
+            clearcoatRoughness: 0.4,
+            transmission: 0.12,
+            thickness: 0.5,
+            transparent: true,
+            opacity: 0.97,
+        });
+
+        const petalCount = 6;
+        for (let i = 0; i < petalCount; i++) {
+            const isInner = i < 3;
+            const layerIndex = isInner ? i : i - 3;
+            const angle = (layerIndex / 3) * Math.PI * 2 + (isInner ? 0 : Math.PI / 3);
+
+            const widthVar = 0.9 + Math.random() * 0.2;
+            const curlVar = 1.6 + Math.random() * 0.4; // fully open, curled back
+            const tiltVar = (Math.random() - 0.5) * 0.3;
+
+            const geo = createCurvedPetal(
+                (isInner ? 0.7 : 0.8) * widthVar,
+                isInner ? 2.0 : 2.2,
+                curlVar,
+                tiltVar
+            );
+
+            const petal = new THREE.Mesh(geo, petalMaterial);
+            petal.rotation.y = -angle;
+            petal.position.x = Math.cos(angle) * 0.05 + 0.55;
+            petal.position.z = Math.sin(angle) * 0.05 - 0.05;
+            petal.position.y = 2.8;
+
+            petal.castShadow = true;
+            petal.receiveShadow = true;
+
+            petal.userData.initialScale = 0;
+            petal.userData.targetScale = 1;
+            petal.userData.delay = 0.15 + i * 0.08;
+            petal.scale.set(0, 0, 0);
+
+            flower.add(petal);
+        }
+
+        const stamenMat = new THREE.MeshPhysicalMaterial({
+            color: 0xf5edd8,
+            roughness: 0.7,
+            metalness: 0.0
+        });
+        const antherMat = new THREE.MeshPhysicalMaterial({
+            color: 0xd4976a,
+            roughness: 0.5,
+            metalness: 0.05,
+            emissive: 0xb07850,
+            emissiveIntensity: 0.1
+        });
+
+        for (let i = 0; i < 6; i++) {
+            const stamenGroup = new THREE.Group();
+            const filGeo = new THREE.CylinderGeometry(0.015, 0.02, 1.1, 8);
+            const filament = new THREE.Mesh(filGeo, stamenMat);
+            filament.position.y = 0.55;
+            stamenGroup.add(filament);
+
+            const anthGeo = new THREE.CapsuleGeometry(0.04, 0.18, 4, 8);
+            const anther = new THREE.Mesh(anthGeo, antherMat);
+            anther.position.y = 1.15;
+            anther.rotation.z = (Math.random() - 0.5) * 0.4;
+            stamenGroup.add(anther);
+
+            const ang = (i / 6) * Math.PI * 2;
+            stamenGroup.position.set(
+                Math.cos(ang) * 0.12 + 0.55,
+                2.8,
+                Math.sin(ang) * 0.12 - 0.05
+            );
+            stamenGroup.rotation.x = Math.cos(ang) * 0.25;
+            stamenGroup.rotation.z = Math.sin(ang) * 0.25;
+
+            stamenGroup.userData.initialScale = 0;
+            stamenGroup.userData.targetScale = 1;
+            stamenGroup.userData.delay = 0.7 + i * 0.03;
+            stamenGroup.scale.set(0, 0, 0);
+
+            flower.add(stamenGroup);
+        }
+
+        const pistilMat = new THREE.MeshPhysicalMaterial({
+            color: 0xa8d5a2,
+            roughness: 0.6,
+            metalness: 0.0
+        });
+        const pistilGeo = new THREE.CylinderGeometry(0.025, 0.04, 1.3, 8);
+        const pistil = new THREE.Mesh(pistilGeo, pistilMat);
+        pistil.position.set(0.55, 3.45, -0.05);
+        const stigmaGeo = new THREE.SphereGeometry(0.06, 16, 16);
+        const stigmaMat = new THREE.MeshPhysicalMaterial({ color: 0x8cc88c, roughness: 0.3 });
+        const stigma = new THREE.Mesh(stigmaGeo, stigmaMat);
+        stigma.position.y = 0.7;
+        pistil.add(stigma);
+        pistil.userData.initialScale = 0;
+        pistil.userData.targetScale = 1;
+        pistil.userData.delay = 0.85;
+        pistil.scale.set(0, 0, 0);
+        flower.add(pistil);
+
+        const stemCurve = new THREE.CatmullRomCurve3([
+            new THREE.Vector3(0.0, -2.5, 0),
+            new THREE.Vector3(0.1, -1.5, 0.05),
+            new THREE.Vector3(0.3, -0.5, 0.08),
+            new THREE.Vector3(0.5, 0.5, 0.05),
+            new THREE.Vector3(0.6, 1.5, 0.0),
+            new THREE.Vector3(0.55, 2.8, -0.05),
+        ]);
+        const stemGeo = new THREE.TubeGeometry(stemCurve, 20, 0.07, 12, false);
+        const stemMat = new THREE.MeshPhysicalMaterial({
+            color: 0x6a9b5a,
+            roughness: 0.65,
+            metalness: 0.0
+        });
+        const stem = new THREE.Mesh(stemGeo, stemMat);
+        stem.castShadow = true;
+        stem.userData.initialScale = 0;
+        stem.userData.targetScale = 1;
+        stem.userData.delay = 0;
+        stem.scale.set(0, 0, 0);
+        flower.add(stem);
+
+        function createLilyLeaf(length, width) {
+            const segW = 6;
+            const segL = 16;
+            const verts = [], norms = [], uvArr = [], idxs = [], cols = [];
+
+            for (let j = 0; j <= segL; j++) {
+                const v = j / segL;
+                const wProfile = Math.sin(v * Math.PI) * width * (1 - 0.2 * v);
+                const y = v * length;
+                for (let i = 0; i <= segW; i++) {
+                    const u = i / segW;
+                    const x = (u - 0.5) * wProfile;
+                    const midribBump = Math.exp(-Math.pow((u - 0.5) * 6, 2)) * 0.06;
+                    const lengthCurve = -Math.sin(v * Math.PI * 0.6) * 0.15;
+                    const droop = v > 0.6 ? (v - 0.6) * (v - 0.6) * -0.8 : 0;
+                    verts.push(x, y, lengthCurve + midribBump + droop);
+                    norms.push(0, 0, 1);
+                    uvArr.push(u, v);
+
+                    const base = new THREE.Color(0x5a8a4a);
+                    const edge = new THREE.Color(0x88b878);
+                    const c = new THREE.Color().lerpColors(base, edge, Math.abs(u - 0.5) * 2);
+                    cols.push(c.r, c.g, c.b);
+                }
+            }
+            for (let j = 0; j < segL; j++) {
+                for (let i = 0; i < segW; i++) {
+                    const a = j * (segW + 1) + i;
+                    const b = a + 1, c = a + (segW + 1), d = c + 1;
+                    idxs.push(a, c, b, b, c, d);
+                }
+            }
+
+            const geo = new THREE.BufferGeometry();
+            geo.setAttribute('position', new THREE.Float32BufferAttribute(verts, 3));
+            geo.setAttribute('normal', new THREE.Float32BufferAttribute(norms, 3));
+            geo.setAttribute('uv', new THREE.Float32BufferAttribute(uvArr, 2));
+            geo.setAttribute('color', new THREE.Float32BufferAttribute(cols, 3));
+            geo.setIndex(idxs);
+            geo.computeVertexNormals();
+
+            const mat = new THREE.MeshPhysicalMaterial({
+                vertexColors: true,
+                side: THREE.DoubleSide,
+                roughness: 0.6,
+                metalness: 0.0,
+                clearcoat: 0.15,
+            });
+            return new THREE.Mesh(geo, mat);
+        }
+
+        const leafPlacements = [
+            { t: 0.15, side: 1,  scale: 0.55 },  // low on stem, right
+            { t: 0.30, side: -1, scale: 0.50 },  // a bit higher, left
+            { t: 0.50, side: 1,  scale: 0.42 },  // mid stem, right
+            { t: 0.65, side: -1, scale: 0.35 },  // upper stem, left
+        ];
+
+        leafPlacements.forEach((lp, idx) => {
+            const leaf = createLilyLeaf(2.2, 0.4);
+            const stemPt = stemCurve.getPointAt(lp.t);
+            leaf.position.set(stemPt.x, stemPt.y, stemPt.z);
+            leaf.rotation.set(
+                0.3 * lp.side,              // tilt forward/back
+                lp.side * 0.4,              // face left or right
+                lp.side * Math.PI / 3       // angle away from stem
+            );
+            leaf.scale.set(lp.scale, lp.scale, lp.scale);
+            leaf.castShadow = true;
+            leaf.userData.initialScale = 0;
+            leaf.userData.targetScale = lp.scale;
+            leaf.userData.delay = 0.05 + idx * 0.08;
+            leaf.scale.set(0, 0, 0);
+            flower.add(leaf);
+        });
+
+        scene.add(flower);
+
+        const particlesGeometry = new THREE.BufferGeometry();
+        const particlesCount = 800;
+        const posArray = new Float32Array(particlesCount * 3);
+        for (let i = 0; i < particlesCount; i++) {
+            posArray[i * 3]     = (Math.random() - 0.5) * 16;
+            posArray[i * 3 + 1] = (Math.random() - 0.5) * 16;
+            posArray[i * 3 + 2] = (Math.random() - 0.5) * 16;
+        }
+        particlesGeometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+        const particlesMaterial = new THREE.PointsMaterial({
+            size: 0.04,
+            color: 0xf0dde8,
+            transparent: true,
+            opacity: 0.5,
+            blending: THREE.AdditiveBlending,
+            depthWrite: false,
+        });
+        const particlesMesh = new THREE.Points(particlesGeometry, particlesMaterial);
+        scene.add(particlesMesh);
+
+        const revealDuration = 2500; // gentle reveal
+
+        function animate() {
+            requestAnimationFrame(animate);
+
+            const elapsed = Date.now() - startTime;
+            const progress = Math.min(elapsed / revealDuration, 1);
+
+            flower.children.forEach(child => {
+                if (child.userData.delay !== undefined) {
+                    const p = Math.max(0, Math.min(1,
+                        (progress - child.userData.delay) / (1 - child.userData.delay)
+                    ));
+                    const eased = 1 - Math.pow(1 - p, 3);
+                    const s = child.userData.initialScale +
+                              (child.userData.targetScale - child.userData.initialScale) * eased;
+                    child.scale.set(s, s, s);
+                }
+            });
+
+            const t = Date.now() * 0.001;
+            flower.position.y = Math.sin(t * 0.8) * 0.06;
+
+            particlesMesh.rotation.y += 0.0003;
+            particlesMesh.rotation.x += 0.0001;
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        setTimeout(() => {
+            document.getElementById('loading').style.display = 'none';
+        }, 500);
+
+        animate();
+    </script>
+</body>
+</html>
